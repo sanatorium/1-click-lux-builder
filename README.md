@@ -1,11 +1,11 @@
-# 1 click lux builder
-==========================
+# build scripts
+===============
 
-# 1 Click compile lux daemon:
-    ./build-luxd.sh
+# compile sanity daemon:
+    ./build-sanityd.sh
 
-# 1 Click compile lux daemon & deploy your masternode:
-    ./lux-masternode.sh
+# compile sanity daemon & deploy your masternode:
+    ./build-masternode.sh
 
-# 1 Click update lux daemon:
-    ./update-luxd.sh
+# update (recompile) sanity daemon from source:
+    ./update-sanity.sh
