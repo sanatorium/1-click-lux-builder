@@ -1,13 +1,4 @@
 #!/bin/bash
-#
-#Info: Installs Sanity daemon, Masternode based on privkey
-#
-#Tested OS: 16.04
-#
-# get the script:
-# wget https://github.com/sanatorium/sanity-scripts/install-sanitymn.sh
-# chmod +x -v ./install-sanitymn.sh
-# ./install-sanitymn.sh
 
 NEWUSER=sanitycore
 COINGITHUB=https://github.com/sanatorium/sanity.git
