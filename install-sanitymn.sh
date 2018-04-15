@@ -292,7 +292,7 @@ compileSource() {
 	./autogen.sh
 	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
 
-	message "Building Sanity for linux: ./configure ${$1} --disable-tests"
+	message "Building Sanity for linux: ./configure ${1} --disable-tests"
 	#sudo chmod 755 -v ./configure
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
