@@ -421,7 +421,7 @@ displayPromptToSendFunds() {
 
 startInstall() {
 	checkForUbuntuVersion
-	#createUser
+	createUser
 	updateAndUpgrade
 	installDependencies
 	installFail2Ban
