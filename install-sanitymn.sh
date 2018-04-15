@@ -1,6 +1,13 @@
 #!/bin/bash
+#
 #Info: Installs Sanity daemon, Masternode based on privkey
+#
 #Tested OS: 16.04
+#
+# get the script:
+# wget https://github.com/sanatorium/sanity-scripts/install-sanitymn.sh
+# chmod +x -v ./install-sanitymn.sh
+# ./install-sanitymn.sh
 
 NEWUSER=sanitycore
 COINGITHUB=https://github.com/sanatorium/sanity.git
@@ -61,8 +68,16 @@ checkForUbuntuVersion() {
         echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
     else
         echo -e "${RED}* You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net` ${NONE}";
-        echo && echo "Installation cancelled" && echo;
-        exit;
+		echo -e "${BOLD}"
+		read -p "Continue anyway? (y/n)? " response
+		echo -e "${NONE}"
+
+		if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+			echo && echo "Trying to install on untested system configuration." && echo;
+		else
+	        echo && echo "Installation cancelled." && echo;
+	        exit;
+		fi
     fi
 }
 
@@ -78,11 +93,11 @@ createUser() {
 
 		message "Choose a password for your new user-account.";
 		adduser $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		if [ $? -ne 0 ]; then error "createUser: adduser ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		usermod -aG sudo $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		if [ $? -ne 0 ]; then error "createUser: usermod -aG sudo ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		message "Checking account directory /home/${NEWUSER}.";
@@ -90,7 +105,7 @@ createUser() {
 
 		message "Switching to new account.";
 		su - $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		if [ $? -ne 0 ]; then error "createUser: su - ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 	else
 	    echo && echo "Creating new user skipped." && echo
@@ -233,7 +248,7 @@ cloneGithub() {
 	message "Cloning source from ${COINGITHUB} to ${COINDIR}."
 	cd ~/
 	git clone $COINGITHUB $COINDIR
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
 
 	messagebig "[Step 7/${MAX}] cloneGithub: Done."
 }
@@ -263,7 +278,7 @@ compileSource() {
 
 	message "Preparing to build Sanity."
 	cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: leveldb"; fi
 
 	#message "Building Sanity: sudo depends/sudo make"
 	#cd ~/$COINDIR/depends
@@ -277,12 +292,12 @@ compileSource() {
 	#sudo chmod 755 -v *.sh
 	#sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
 
 	message "Building Sanity for linux: ./configure ${$1} --disable-tests"
 	#sudo chmod 755 -v ./configure
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
 
 	message "Building Sanity for linux: make clean"
 	make clean
@@ -291,12 +306,13 @@ compileSource() {
 
 	message "Building Sanity for linux: make"
 	make
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: make"; fi
 
   	message "Storing sanityd and sanity-cli to ~/${COINBIN}"
 	strip $COINDAEMON
 	strip $COINCLI
 	make install DESTDIR=~/$COINBIN
+	if [ $? -ne 0 ]; then error "compileSource: make install"; fi
 
 	message "Installing sanityd and sanity-cli to ~/${COINCORE}"
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
@@ -305,7 +321,7 @@ compileSource() {
 
   	#sudo ln -s sanityd /usr/bin
 	#sudo ln -s sanity-cli /usr/bin
-  	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: copy"; fi
 
 	messagebig "[Step 9/${MAX}] compileSource: Done."
 }
