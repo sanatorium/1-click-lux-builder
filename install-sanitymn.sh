@@ -67,11 +67,11 @@ On_Cyan='\[\033[46m\]'        # Cyan
 On_White='\[\033[47m\]'       # White
 
 message() {
-	echo -e "${NONE}${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
+	echo -e "${NONE} ${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
 }
 
 messagebig() {
-	echo -e "${On_Black}${BLUE}"
+	echo -e "${On_Black} ${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
 	echo -e "***"
@@ -84,7 +84,7 @@ messagebig() {
 }
 
 error() {
-	echo -e "${On_Red}${BLUE}"
+	echo -e "${On_Red} ${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "***"
 	echo -e "*** An error occured, you must fix it to continue!"
