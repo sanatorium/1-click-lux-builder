@@ -326,7 +326,7 @@ compileSource() {
 	#sudo chmod 755 -v config.guess && sudo chmod +x -v config.sub
 	#make
 
-	message "Building Sanity for linux: sudo ./autogen.sh"
+	message "Building Sanity: sudo ./autogen.sh"
 	cd ~/$COINDIR
 	ls -al
 	#sudo chmod 755 -v *.sh
@@ -334,39 +334,42 @@ compileSource() {
 	./autogen.sh
 	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
 
-	message "Building Sanity for linux: ./configure ${1} --disable-tests"
+	message "Building Sanity: ./configure ${1} --disable-tests"
 	#sudo chmod 755 -v ./configure
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
 
-	message "Building Sanity for linux: make clean"
+	message "Building Sanity: make clean"
 	make clean
 
 	#sudo chmod 755 share/genbuild.sh
 
-	message "Building Sanity for linux: make"
+	message "Building Sanity: make"
 	make
 	if [ $? -ne 0 ]; then error "compileSource: make"; fi
 
-  	message "Storing sanityd and sanity-cli to ~/${COINBIN}"
+	message "Storing sanityd and sanity-cli to ~/${COINBIN}"
 	strip $COINDAEMON
 	strip $COINCLI
 	make install DESTDIR=~/$COINBIN
 	if [ $? -ne 0 ]; then error "compileSource: make install"; fi
 
-	message "Installing sanityd and sanity-cli to ~/${COINCORE}"
+	messagebig "[Step 9/${MAX}] compileSource: Done."
+}
+
+installBuildLinux() {
+	messagebig "[Step 9/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
 	cp -uv ~/$COINBIN/usr/local/bin/sanityd ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/sanity-cli ~/$COINCORE
 
   	#sudo ln -s sanityd /usr/bin
 	#sudo ln -s sanity-cli /usr/bin
-	if [ $? -ne 0 ]; then error "compileSource: copy"; fi
-
-	messagebig "[Step 9/${MAX}] compileSource: Done."
+	if [ $? -ne 0 ]; then error "installBuildLinux: copy"; fi
+	messagebig "[Step 9/${MAX}] installBuildLinux: Done."
 }
 
-createConfig() {
+createConfigMN() {
 	messagebig "[Step 10/${MAX}] createConfig: Creating sanity.conf"
 	mnkey=""
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
@@ -413,10 +416,10 @@ createConfig() {
 	messagebig "[Step 10/${MAX}] createConfig: Done."
 }
 
-startWallet() {
+startDaemon() {
 	messagebig "[Step 11/${MAX}] startWallet: Starting wallet daemon."
 
-	message "Reseting."
+	message "Remove *.dat."
 	cd ~/$COINCORE
 	sudo rm governance.dat > /dev/null 2>&1
 	sudo rm netfulfilled.dat > /dev/null 2>&1
@@ -461,7 +464,19 @@ displayPromptToSendFunds() {
     message "Restart your local wallet. Go to the masternode-tab, select your masternode and select 'start'."
 }
 
-startInstallAll() {
+crossCompileDepends() {
+	message "Building Sanity for windows: depends"
+	cd ~/$COINDIR/depends
+	make HOST=x86_64-w64-mingw32
+}
+
+crossCompileBuild() {
+	message "Building Sanity for windows: depends"
+	cd ~/$COINDIR
+	compileSource --prefix=`pwd`/depends/x86_64-w64-mingw32
+}
+
+startInstallMNAll() {
 	checkForUbuntuVersion
 	createUser
 	updateAndUpgrade
@@ -473,8 +488,9 @@ startInstallAll() {
 	removeWindowsLinefeeds
 	#patchTimestamps
 	compileSource $1
-	createConfig
-	startWallet
+	installBuildLinux
+	createConfigMN
+	startDaemon
 	syncWallet
 	displayPromptToSendFunds
 }
@@ -502,19 +518,36 @@ installStep() {
 	            cloneGithub
 				removeWindowsLinefeeds
 	            ;;
-			compile)
+
+			compilemn)
 	            compileSource --without-gui
-				createConfig
+				installBuildLinux
 	            ;;
-			config)
-	            compileSource --without-gui
-				createConfig
+			configmn)
+				createConfigMN
 	            ;;
-			start)
-	            startWallet
+			startmn)
+	            startDeamon
 				syncWallet
 				displayPromptToSendFunds
 	            ;;
+
+			compilewallet)
+	            compileSource
+				installBuildLinux
+	            ;;
+			startwallet)
+	            startDaemon
+				syncWallet
+	            ;;
+
+			crosscompiledepends)
+	            crossCompileDepends
+	            ;;
+			crosscompilebuild)
+	            crossCompileBuild
+	            ;;
+
 			all)
 				echo -e "${BOLD}"
 				read -p "This script will create a new user-account and setup your Sanity Masternode to it. Do you wish to continue? (y/n)? " response
@@ -522,7 +555,7 @@ installStep() {
 
 				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 					#default to --without-gui for masternode
-					startInstallAll --without-gui
+					startInstallMNAll --without-gui
 				else
 				    echo && echo "Installation cancelled" && echo
 				fi
@@ -544,18 +577,23 @@ echo -e "|                                                                  |"
 echo -e "--------------------------------------------------------------------"
 echo
 message "single access install steps (recommended):"
-message "$0 check"
-message "$0 user"
-message "$0 deps"
-message "$0 firewall"
-message "$0 swap"
-message "$0 clone"
-message "$0 compile"
-message "$0 config"
-message "$0 start"
+message "step 1: $0 check"
+message "step 2: $0 user"
+message "step 3: $0 deps"
+message "step 4: $0 firewall"
+message "step 5: $0 swap"
+message "step 6: $0 clone"
+message "option 1: steps to run a masternode:"
+message "step 7: $0 compilemn"
+message "step 8: $0 configmn"
+message "step 9: $0 startmn"
+message "option 2: steps run a wallet:"
+message "step 7: $0 compilewallet"
+message "step 8: $0 startwallet"
+message "option 3: crosscompile wallet for windows:"
+message "step 7: $0 crosscompiledepends"
+message "step 8: $0 crosscompilebuild"
 echo
-message "process all install steps:"
-message "$0 all"
 
 cd
 installStep $1
