@@ -24,7 +24,7 @@ MAX=14
 NONE='\033[00m'
 BOLD='\033[1m'
 UNDERLINE='\033[4m'
-ENDCOLOR="\e[m"
+ENDCOLOR='\e[m'
 
 # Regular Colors
 BLACK='\[\033[0;30m\]'        # Black
