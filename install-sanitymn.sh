@@ -2,6 +2,7 @@
 
 #Info: Installs Sanity daemon, Masternode based on privkey
 #Tested OS: 16.04
+
 #get the script:
 # wget https://raw.githubusercontent.com/sanatorium/sanity-scripts/master/install-sanitymn.sh
 # chmod +x -v ./install-sanitymn.sh
@@ -21,51 +22,86 @@ COINCLI=sanity-cli
 MAX=14
 
 NONE='\033[00m'
-RED='\033[01;31m'
-GREEN='\033[01;32m'
-YELLOW='\033[01;33m'
-PURPLE='\033[01;35m'
-CYAN='\033[01;36m'
-WHITE='\033[01;37m'
 BOLD='\033[1m'
 UNDERLINE='\033[4m'
+ENDCOLOR="\e[m"
+
+# Regular Colors
+BLACK="\[\033[0;30m\]"        # Black
+RED="\[\033[0;31m\]"          # Red
+GREEN="\[\033[0;32m\]"        # Green
+YELLOW="\[\033[0;33m\]"       # Yellow
+BLUE="\[\033[0;34m\]"         # Blue
+PURPLE="\[\033[0;35m\]"       # Purple
+CYAN="\[\033[0;36m\]"         # Cyan
+WHITE="\[\033[0;37m\]"        # White
+
+# Bold
+BBlack="\[\033[1;30m\]"       # Black
+BRed="\[\033[1;31m\]"         # Red
+BGreen="\[\033[1;32m\]"       # Green
+BYellow="\[\033[1;33m\]"      # Yellow
+BBlue="\[\033[1;34m\]"        # Blue
+BPurple="\[\033[1;35m\]"      # Purple
+BCyan="\[\033[1;36m\]"        # Cyan
+BWhite="\[\033[1;37m\]"       # White
+
+# Underline
+UBlack="\[\033[4;30m\]"       # Black
+URed="\[\033[4;31m\]"         # Red
+UGreen="\[\033[4;32m\]"       # Green
+UYellow="\[\033[4;33m\]"      # Yellow
+UBlue="\[\033[4;34m\]"        # Blue
+UPurple="\[\033[4;35m\]"      # Purple
+UCyan="\[\033[4;36m\]"        # Cyan
+UWhite="\[\033[4;37m\]"       # White
+
+# Background
+On_Black="\[\033[40m\]"       # Black
+On_Red="\[\033[41m\]"         # Red
+On_Green="\[\033[42m\]"       # Green
+On_Yellow="\[\033[43m\]"      # Yellow
+On_Blue="\[\033[44m\]"        # Blue
+On_Purple="\[\033[45m\]"      # Purple
+On_Cyan="\[\033[46m\]"        # Cyan
+On_White="\[\033[47m\]"       # White
 
 message() {
-	echo -e "${NONE}*** ${GREEN} $1 ${NONE}"
+	echo -e "${NONE}${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
 }
 
 messagebig() {
-	echo -e "${YELLOW}"
+	echo -e "${On_Black}${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
 	echo -e "***"
-	echo -e "*** ${GREEN} $1 ${CYAN}"
+	echo -e "*** ${WHITE} $1 ${BLUE}"
 	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
-	echo -e "${NONE}"
+	echo -e "${ENDCOLOR}"
 	sleep 2s
 }
 
 error() {
-	echo -e "${RED}"
+	echo -e "${On_Red}${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "***"
 	echo -e "*** An error occured, you must fix it to continue!"
 	echo -e "***"
-	echo -e "*** ${RED} $1 ${RED}"
+	echo -e "*** ${BLACK} $1 ${BLUE}"
 	echo -e "***"
 	echo -e "********************************************************************"
-	echo -e "${NONE}"
+	echo -e "${ENDCOLOR}"
 	exit 1
 }
 
 checkForUbuntuVersion() {
    messagebig "Checking Ubuntu version..."
     if [[ `cat /etc/issue.net` == *16.04* ]]; then
-        echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
+        message "You are running `cat /etc/issue.net` . Setup will continue.";
     else
-        echo -e "${RED}* You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net` ${NONE}";
+        message "You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net`";
 		echo -e "${BOLD}"
 		read -p "Continue anyway? (y/n)? " response
 		echo -e "${NONE}"
@@ -81,25 +117,27 @@ checkForUbuntuVersion() {
 
 createUser() {
 	messagebig "[Step 1/${MAX}] createUser: Create new user account '${NEWUSER}'"
-	echo -e "${BOLD}"
-	read -p "Create a new user-account ${NEWUSER}? (y/n)? " response
-	echo -e "${NONE}"
 
+	echo -e "${BOLD}"
+	read -p "Create a new user-account called ${NEWUSER}? (y/n)? " response
+	echo -e "${NONE}"
 	if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 		message "Switching to root user. Enter your root password.";
-		su
+		##su needs unlocked root-account first: sudo passwd root
+		#su
 
-		message "Choose a password for your new user-account.";
-		adduser $NEWUSER
+		message "Than choose a password for your new user-account.";
+		#adduser $NEWUSER
+		sudo adduser $NEWUSER
 		if [ $? -ne 0 ]; then error "createUser: adduser ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
-		usermod -aG sudo $NEWUSER
+		sudo usermod -aG sudo $NEWUSER
 		if [ $? -ne 0 ]; then error "createUser: usermod -aG sudo ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		message "Checking account directory /home/${NEWUSER}.";
-		ls /home/$NEWUSER
+		sudo ls /home/$NEWUSER
 
 		message "Switching to new account.";
 		su - $NEWUSER
