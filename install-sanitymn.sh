@@ -461,9 +461,9 @@ displayPromptToSendFunds() {
     message "Restart your local wallet. Go to the masternode-tab, select your masternode and select 'start'."
 }
 
-startInstall() {
+startInstallAll() {
 	checkForUbuntuVersion
-	#createUser
+	createUser
 	updateAndUpgrade
 	installDependencies
 	installFail2Ban
@@ -515,6 +515,18 @@ installStep() {
 				syncWallet
 				displayPromptToSendFunds
 	            ;;
+			all)
+				echo -e "${BOLD}"
+				read -p "This script will create a new user-account and setup your Sanity Masternode to it. Do you wish to continue? (y/n)? " response
+				echo -e "${NONE}"
+
+				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+					#default to --without-gui for masternode
+					startInstallAll --without-gui
+				else
+				    echo && echo "Installation cancelled" && echo
+				fi
+	            ;;
 	        *)
 	            echo $"Usage: $0 {deps|firewall|swap|clone|compile|config|start}"
 	            exit 1
@@ -531,38 +543,20 @@ echo -e "|               (c) 2018 The Sanity Core Developers                |"
 echo -e "|                                                                  |"
 echo -e "--------------------------------------------------------------------"
 echo
-message "install steps:"
-message "./$0 check"
-message "./$0 user"
-message "./$0 deps"
-message "./$0 firewall"
-message "./$0 swap"
-message "./$0 clone"
-message "./$0 compile"
-message "./$0 config"
-message "./$0 start"
+message "single access install steps (recommended):"
+message "$0 check"
+message "$0 user"
+message "$0 deps"
+message "$0 firewall"
+message "$0 swap"
+message "$0 clone"
+message "$0 compile"
+message "$0 config"
+message "$0 start"
+echo
+message "process all install steps:"
+message "$0 all"
 
 cd
 installStep $1
 exit 1
-
-
-echo
-echo -e "--------------------------------------------------------------------"
-echo -e "|                                                                  |"
-echo -e "|                  ${BOLD}--+-- Sanity Masternode --+--${NONE}                   |"
-echo -e "|                                                                  |"
-echo -e "|               (c) 2018 The Sanity Core Developers                |"
-echo -e "|                                                                  |"
-echo -e "--------------------------------------------------------------------"
-
-echo -e "${BOLD}"
-read -p "This script will create and setup your Sanity Masternode. Do you wish to continue? (y/n)? " response
-echo -e "${NONE}"
-
-if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-	#default to --without-gui for masternode
-	startInstall --without-gui
-else
-    echo && echo "Installation cancelled" && echo
-fi
