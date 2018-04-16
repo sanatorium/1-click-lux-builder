@@ -5,6 +5,7 @@
 
 #get the script:
 # wget https://raw.githubusercontent.com/sanatorium/sanity-scripts/master/install-sanitymn.sh
+# git clone https://github.com/sanatorium/sanity-scripts.git
 # chmod +x -v ./install-sanitymn.sh
 # ./install-sanitymn.sh
 
@@ -71,11 +72,11 @@ message() {
 }
 
 messagebig() {
-	echo -e "${On_Black}${BLUE}"
+	echo -e "${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
 	echo -e "***"
-	echo -e "*** ${WHITE}$1${BLUE}"
+	echo -e "*** $1"
 	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
@@ -84,12 +85,12 @@ messagebig() {
 }
 
 error() {
-	echo -e "${On_Red} ${BLUE}"
+	echo -e "${RED}"
 	echo -e "********************************************************************"
 	echo -e "***"
 	echo -e "*** An error occured, you must fix it to continue!"
 	echo -e "***"
-	echo -e "*** ${BLACK} $1 ${BLUE}"
+	echo -e "*** $1"
 	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "${ENDCOLOR}"
@@ -283,9 +284,12 @@ cloneGithub() {
 
 	message "Cloning source from ${COINGITHUB} to ${COINDIR}."
 	cd ~/
-	git clone $COINGITHUB $COINDIR
-	if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
-
+	if [ ! -d "~/$COINDIR" ]; then
+		git clone $COINGITHUB $COINDIR
+		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
+	else
+		message "Directory exists already. Cloning skipped."
+	fi
 	messagebig "[Step 7/${MAX}] cloneGithub: Done."
 }
 
@@ -475,8 +479,73 @@ startInstall() {
 	displayPromptToSendFunds
 }
 
+installStep() {
+	case "$1" in
+			check)
+				checkForUbuntuVersion
+				;;
+			user)
+				createUser
+				;;
+	        deps)
+				updateAndUpgrade
+				installDependencies
+	            ;;
+	        firewall)
+	            installFail2Ban
+				installFirewall
+	            ;;
+	        swap)
+	            createSwap
+	            ;;
+	        clone)
+	            cloneGithub
+				removeWindowsLinefeeds
+	            ;;
+			compile)
+	            compileSource --without-gui
+				createConfig
+	            ;;
+			config)
+	            compileSource --without-gui
+				createConfig
+	            ;;
+			start)
+	            startWallet
+				syncWallet
+				displayPromptToSendFunds
+	            ;;
+	        *)
+	            echo $"Usage: $0 {deps|firewall|swap|clone|compile|config|start}"
+	            exit 1
+	esac
+}
+
 clear
+echo
+echo -e "--------------------------------------------------------------------"
+echo -e "|                                                                  |"
+echo -e "|                  ${BOLD}--+-- Sanity Masternode --+--${NONE}                   |"
+echo -e "|                                                                  |"
+echo -e "|               (c) 2018 The Sanity Core Developers                |"
+echo -e "|                                                                  |"
+echo -e "--------------------------------------------------------------------"
+echo
+message "install steps:"
+message "./$0 check"
+message "./$0 user"
+message "./$0 deps"
+message "./$0 firewall"
+message "./$0 swap"
+message "./$0 clone"
+message "./$0 compile"
+message "./$0 config"
+message "./$0 start"
+
 cd
+installStep $1
+exit 1
+
 
 echo
 echo -e "--------------------------------------------------------------------"
