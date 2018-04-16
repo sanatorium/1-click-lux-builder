@@ -9,6 +9,7 @@
 # chmod +x -v ./install-sanitymn.sh
 # ./install-sanitymn.sh
 
+
 NEWUSER=sanitycore
 COINGITHUB=https://github.com/sanatorium/sanity.git
 COINDIR=sanity-src
