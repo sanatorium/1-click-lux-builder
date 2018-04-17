@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Info: Installs Sanity daemon, masternode based on privkey, crosscompile for windows
+#Info: In<stalls Sanity daemon, masternode based on privkey, crosscompile for windows
 #Tested OS: 16.04
 
 #get the script:
@@ -435,22 +435,22 @@ compileSource() {
 }
 
 installBuildLinux() {
-	messagebig "[Step 9/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
+	messagebig "[Step 10/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
-	error "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
-	cp -uv ~/$COINBIN/usr/local/bin/sanityd ~/$COINCORE
-	cp -uv ~/$COINBIN/usr/local/bin/sanity-cli ~/$COINCORE
+	message "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
+	cp -uv ~/$COINBIN/usr/local/bin/$COINDAEMON ~/$COINCORE
+	cp -uv ~/$COINBIN/usr/local/bin/$COINCLI ~/$COINCORE
 	if [ $? -ne 0 ]; then error "installBuildLinux: failed to copy to ~/${COINCORE}"; fi
 
 	#optional
 	cp -uv ~/$COINBIN/usr/local/bin/sanity-tx ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/sanity-qt ~/$COINCORE
 
-	messagebig "[Step 9/${MAX}] installBuildLinux: Done."
+	messagebig "[Step 10/${MAX}] installBuildLinux: Done."
 }
 
 createConfigMN() {
-	messagebig "[Step 10/${MAX}] createConfig: Creating sanity.conf"
+	messagebig "[Step 11/${MAX}] createConfig: Creating sanity.conf"
 	mnkey=""
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
 
@@ -492,11 +492,11 @@ createConfigMN() {
 	message "createConfig: Show Sanity config: cat ~/${$COINCORE}/${$COINCONFIG}"
 	cat ~/$COINCORE/$COINCONFIG
 
-	messagebig "[Step 10/${MAX}] createConfig: Done."
+	messagebig "[Step 11/${MAX}] createConfig: Done."
 }
 
 startDaemon() {
-	messagebig "[Step 11/${MAX}] startDaemon: Starting wallet daemon."
+	messagebig "[Step 12/${MAX}] startDaemon: Starting wallet daemon."
 
 	message "startDaemon: Remove *.dat."
 	cd ~/$COINCORE
@@ -513,12 +513,12 @@ startDaemon() {
 	message "startDaemon: Starting daemon: ~/${COINCORE}/${COINDAEMON} -daemon"
 	~/$COINCORE/$COINDAEMON -daemon
 
-	messagebig "[Step 11/${MAX}] startWallet: Done. Damon is running."
+	messagebig "[Step 12/${MAX}] startWallet: Done. Damon is running."
 }
 
 syncWallet() {
     echo
-	messagebig "[Step 12/${MAX}] syncWallet: Please wait for wallet to sync..."
+	messagebig "[Step 13/${MAX}] syncWallet: Please wait for wallet to sync..."
     sleep 2
 	message "startDaemon: ~/${COINCORE}/${COINCLI} getinfo"
 	~/$COINCORE/$COINCLI getinfo
