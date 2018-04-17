@@ -321,7 +321,7 @@ cloneGithub() {
 
 	message "cloneGithub: Cloning source from ${COINGITHUB} to ${COINDIR}."
 	cd ~/
-	if [ ! -d "~/${COINDIR}" ]; then
+	if [ ! -d ${COINDIR} ]; then
 		git clone $COINGITHUB $COINDIR
 		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
 	else
