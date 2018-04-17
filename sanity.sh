@@ -94,6 +94,8 @@ error() {
 	echo -e "***"
 	echo -e "*** $1"
 	echo -e "***"
+	echo -e "*** $2"
+	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "${ENDCOLOR}"
 	exit 1
@@ -150,11 +152,11 @@ createUser() {
 		message "Than choose a password for your new user-account.";
 		#adduser $NEWUSER
 		sudo adduser $NEWUSER
-		if [ $? -ne 0 ]; then error "createUser: adduser ${NEWUSER}"; fi
+		if [ $? -ne 0 ]; then error "createUser: adduser ${NEWUSER}" "${?}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		sudo usermod -aG sudo $NEWUSER
-		if [ $? -ne 0 ]; then error "createUser: usermod -aG sudo ${NEWUSER}"; fi
+		if [ $? -ne 0 ]; then error "createUser: usermod -aG sudo ${NEWUSER}" "${?}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		message "Checking account directory /home/${NEWUSER}.";
@@ -162,7 +164,7 @@ createUser() {
 
 		message "Switching to new account.";
 		su - $NEWUSER
-		if [ $? -ne 0 ]; then error "createUser: su - ${NEWUSER}"; fi
+		if [ $? -ne 0 ]; then error "createUser: su - ${NEWUSER}" "${?}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 	else
 	    echo && echo "Creating new user skipped." && echo
@@ -191,14 +193,14 @@ installDependencies() {
 	#build requirements
 	message "installDependencies: Installing build requirements.";
 	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
-	if [ $? -ne 0 ]; then error "installDependencies: build requirements"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: build requirements" "${?}"; fi
 
 	#boost
 	message "installDependencies: Installing boost.";
 	sudo apt-get install -y libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 	##above not working with --disable-wallet ->
 	#sudo apt-get install -y libboost-all-dev
-	if [ $? -ne 0 ]; then error "installDependencies: boost"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: boost" "${?}"; fi
 
 	#db4.8
 	message "installDependencies: Installing db4.8.";
@@ -208,31 +210,31 @@ installDependencies() {
 	#remove unneeded db-installes
 	sudo apt autoremove
 	sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
-	if [ $? -ne 0 ]; then error "installDependencies: db4.8"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: db4.8" "${?}"; fi
 
 	#zqm
 	message "installDependencies: Installing zqm.";
 	sudo apt-get install -y libzmq3-dev
-	if [ $? -ne 0 ]; then error "installDependencies: zqm"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: zqm" "${?}"; fi
 
 	#qt5
 	message "installDependencies: Installing qt5.";
 	sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
-	if [ $? -ne 0 ]; then error "installDependencies: qt5"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: qt5" "${?}"; fi
 
 	#git
 	message "installDependencies: Installing git.";
 	sudo apt install -y git
-	if [ $? -ne 0 ]; then error "installDependencies: git"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: git" "${?}"; fi
 
 	#crlf to lf converter
 	message "installDependencies: Installing dos2unix.";
 	sudo apt-get install -y dos2unix
-	if [ $? -ne 0 ]; then error "installDependencies: dos2unix"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: dos2unix" "${?}"; fi
 
 	message "installDependencies: Installing curl.";
 	sudo apt install -y curl
-	if [ $? -ne 0 ]; then error "installDependencies: dos2unix"; fi
+	if [ $? -ne 0 ]; then error "installDependencies: curl" "${?}"; fi
 
 	#echo
 	#echo -e "[5/${MAX}] Installing dependencies. Please wait..."
@@ -323,7 +325,7 @@ cloneGithub() {
 	cd ~/
 	if [ ! -d ${COINDIR} ]; then
 		git clone $COINGITHUB $COINDIR
-		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
+		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}" "${?}"; fi
 	else
 		message "cloneGithub: Directory exists already. Cloning skipped."
 	fi
@@ -360,7 +362,7 @@ compileSource() {
 
 	message "compileSource: Preparing to build Sanity."
 	cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
-	if [ $? -ne 0 ]; then error "compileSource: leveldb"; fi
+	if [ $? -ne 0 ]; then error "compileSource: leveldb" "${?}"; fi
 
 	#message "Building Sanity: sudo depends/sudo make"
 	#cd ~/$COINDIR/depends
@@ -376,13 +378,13 @@ compileSource() {
 	#sudo chmod 755 -v *.sh
 	#sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
-	if [ $? -ne 0 ]; then error "compileSource: failed to ./autogen.sh"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to ./autogen.sh" "${?}"; fi
 
 	message "compileSource: ./configure ${1} --disable-tests --disable-bench --disable-silent-rules --enable-debug"
 	#sudo chmod 755 -v ./configure
 	#./configure --without-gui --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
-	if [ $? -ne 0 ]; then error "compileSource: failed to ./configure"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to ./configure" "${?}"; fi
 
 	message "compileSource: make clean"
 	make clean
@@ -391,7 +393,7 @@ compileSource() {
 
 	message "compileSource: make"
 	make
-	if [ $? -ne 0 ]; then error "compileSource: failed to make"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to make" "${?}"; fi
 
 	#message "compileSource: strip sanityd and sanity-cli"
 	#strip -v ~/$COINDIR/$COINDAEMON
@@ -399,7 +401,7 @@ compileSource() {
 
 	message "compileSource: Storing sanityd and sanity-cli to ~/${COINBIN}"
 	make install-strip DESTDIR=~/$COINBIN
-	if [ $? -ne 0 ]; then error "compileSource: failed to make install"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to make install" "${?}"; fi
 
 	message "compileSource: make check"
 	make check
@@ -415,7 +417,7 @@ installBuildLinux() {
 	message "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
 	cp -uv ~/$COINBIN/usr/local/bin/$COINDAEMON ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/$COINCLI ~/$COINCORE
-	if [ $? -ne 0 ]; then error "installBuildLinux: failed to copy to ~/${COINCORE}"; fi
+	if [ $? -ne 0 ]; then error "installBuildLinux: failed to copy to ~/${COINCORE}" "${?}"; fi
 
 	#optional
 	cp -uv ~/$COINBIN/usr/local/bin/sanity-tx ~/$COINCORE
@@ -523,9 +525,9 @@ displayPromptToSendFunds() {
 crossCompileInstallDependencies() {
 	messagebig "crossCompileInstallDependencies: install mingw"
 	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
-	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install dependencies"; fi
+	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install dependencies" "${?}"; fi
 	sudo apt-get install -y g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
-	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install minigw"; fi
+	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install minigw" "${?}"; fi
 
 	#sudo apt install software-properties-common
 	#sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu zesty universe"
@@ -541,7 +543,7 @@ crossCompileDepends() {
 	messagebig "crossCompileDepends: Building for windows: depends/make HOST=x86_64-w64-mingw32"
 	cd ~/$COINDIR/depends
 	make HOST=x86_64-w64-mingw32
-	if [ $? -ne 0 ]; then error "crossCompileDepends: failed to make HOST=x86_64-w64-mingw32"; fi
+	if [ $? -ne 0 ]; then error "crossCompileDepends: failed to make HOST=x86_64-w64-mingw32" "${?}"; fi
 	#32bit: make HOST=i686_64-w64-mingw32
 	messagebig "crossCompileDepends: Done."
 }
@@ -557,7 +559,7 @@ crossCompilePosix() {
 	message "crossCompilePosix: You must select any of the toolchains with 'Thread model posix"
 	message "crossCompilePosix: Set the default mingw32 g++ compiler option to ***posix***."
 	sudo update-alternatives --config x86_64-w64-mingw32-g++
-	if [ $? -ne 0 ]; then error "crossCompilePosix: failed to set posix"; fi
+	if [ $? -ne 0 ]; then error "crossCompilePosix: failed to set posix" "${?}"; fi
 	#32bit: sudo update-alternatives --config i686-w64-mingw32-g++
 	messagebig "crossCompilePosix: Done."
 }
@@ -566,7 +568,7 @@ crossCompileBuild() {
 	messagebig "crossCompileBuild: Building for windows: compile source"
 	cd ~/$COINDIR
 	compileSource --prefix=`pwd`/depends/x86_64-w64-mingw32
-	if [ $? -ne 0 ]; then error "crossCompileBuild: failed to compile source"; fi
+	if [ $? -ne 0 ]; then error "crossCompileBuild: failed to compile source" "${?}"; fi
 	#32bit: compileSource --prefix=`pwd`/depends/i686_64-w64-mingw32
 	messagebig "crossCompileBuild: Done."
 }
