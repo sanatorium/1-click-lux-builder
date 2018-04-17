@@ -163,39 +163,49 @@ updateAndUpgrade() {
 installDependencies() {
 	messagebig "[Step 3/${MAX}] installDependencies: Installing dependencies."
 
-	sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
+	#sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
 
 	#build requirements
 	message "Installing build requirements.";
 	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+	if [ $? -ne 0 ]; then error "installDependencies: build requirements"; fi
 
 	#boost
 	message "Installing boost.";
 	sudo apt-get install -y libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
-	##not working -> sudo apt-get install libboost-all-dev
+	##above not working with --disable-wallet ->
+	#sudo apt-get install -y libboost-all-dev
+	if [ $? -ne 0 ]; then error "installDependencies: boost"; fi
 
 	#db4.8
 	message "Installing db4.8.";
 	sudo apt-get install -y software-properties-common
-	sudo add-apt-repository ppa:bitcoin/bitcoin
+	sudo add-apt-repository -y ppa:bitcoin/bitcoin
 	sudo apt-get update -y
+	#remove unneeded db-installes
+	sudo apt autoremove
 	sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
+	if [ $? -ne 0 ]; then error "installDependencies: db4.8"; fi
 
 	#zqm
 	message "Installing zqm.";
 	sudo apt-get install -y libzmq3-dev
+	if [ $? -ne 0 ]; then error "installDependencies: zqm"; fi
 
 	#qt5
 	message "Installing qt5.";
 	sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
+	if [ $? -ne 0 ]; then error "installDependencies: qt5"; fi
 
 	#git
 	message "Installing git.";
 	sudo apt install -y git
+	if [ $? -ne 0 ]; then error "installDependencies: git"; fi
 
 	#crlf to lf converter
-	message "Installing sod2unix.";
+	message "Installing dos2unix.";
 	sudo apt-get install -y dos2unix
+	if [ $? -ne 0 ]; then error "installDependencies: dos2unix"; fi
 
 	#echo
 	#echo -e "[5/${MAX}] Installing dependencies. Please wait..."
@@ -298,6 +308,11 @@ removeWindowsLinefeeds() {
 
 	#cd /home/$NEWUSER/$COINDIR
 	cd ~/$COINDIR
+
+	# strip out problematic Windows %PATH% imported var (Windows Subsystem for Linux (WSL))
+	PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g')
+
+	# convert lineendings
 	find . -type f -not -path '*/\.*' -exec grep -Il '.' {} \; | xargs -d '\n' -L 1 sudo dos2unix -k
 
 	messagebig "[Step 8/${MAX}] removeWindowsLinefeeds: Done."
@@ -316,7 +331,7 @@ patchTimestamps() {
 compileSource() {
 	messagebig "[Step 9/${MAX}] compileSource: Building Sanity."
 
-	message "Preparing to build Sanity."
+	message "compileSource: Preparing to build Sanity."
 	cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
 	if [ $? -ne 0 ]; then error "compileSource: leveldb"; fi
 
@@ -326,32 +341,37 @@ compileSource() {
 	#sudo chmod 755 -v config.guess && sudo chmod +x -v config.sub
 	#make
 
-	message "Building Sanity: sudo ./autogen.sh"
+	message "compileSource: ls"
 	cd ~/$COINDIR
 	ls -al
+
+	message "compileSource: ./autogen.sh"
 	#sudo chmod 755 -v *.sh
 	#sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
 	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
 
-	message "Building Sanity: ./configure ${1} --disable-tests"
+	message "compileSource: ./configure ${1} --disable-tests"
 	#sudo chmod 755 -v ./configure
+	#./configure --without-gui --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
 
-	message "Building Sanity: make clean"
+	message "compileSource: make clean"
 	make clean
 
 	#sudo chmod 755 share/genbuild.sh
 
-	message "Building Sanity: make"
+	message "compileSource: make"
 	make
 	if [ $? -ne 0 ]; then error "compileSource: make"; fi
 
-	message "Storing sanityd and sanity-cli to ~/${COINBIN}"
-	strip $COINDAEMON
-	strip $COINCLI
-	make install DESTDIR=~/$COINBIN
+	#message "compileSource: strip sanityd and sanity-cli"
+	#strip -v ~/$COINDIR/$COINDAEMON
+	#strip -v ~/$COINDIR/$COINCLI
+
+	message "compileSource: Storing sanityd and sanity-cli to ~/${COINBIN}"
+	make install-strip DESTDIR=~/$COINBIN
 	if [ $? -ne 0 ]; then error "compileSource: make install"; fi
 
 	messagebig "[Step 9/${MAX}] compileSource: Done."
@@ -362,6 +382,8 @@ installBuildLinux() {
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
 	cp -uv ~/$COINBIN/usr/local/bin/sanityd ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/sanity-cli ~/$COINCORE
+	cp -uv ~/$COINBIN/usr/local/bin/sanity-tx ~/$COINCORE
+	cp -uv ~/$COINBIN/usr/local/bin/sanity-qt ~/$COINCORE
 
   	#sudo ln -s sanityd /usr/bin
 	#sudo ln -s sanity-cli /usr/bin
@@ -464,6 +486,19 @@ displayPromptToSendFunds() {
     message "Restart your local wallet. Go to the masternode-tab, select your masternode and select 'start'."
 }
 
+crossCompileInstallDependencies() {
+	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
+	sudo apt-get install -y g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+
+	#sudo apt install software-properties-common
+	#sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu zesty universe"
+	#sudo apt update
+	#sudo apt upgrade
+
+	## You must select any of the toolchains with 'Thread model posix'
+	#sudo update-alternatives --config x86_64-w64-mingw32-g++ # Set the default mingw32 g++ compiler option to posix.
+}
+
 crossCompileDepends() {
 	message "Building Sanity for windows: depends"
 	cd ~/$COINDIR/depends
@@ -541,6 +576,9 @@ installStep() {
 				syncWallet
 	            ;;
 
+			crosscompiledeps)
+				crossCompileInstallDependencies
+				;;
 			crosscompiledepends)
 	            crossCompileDepends
 	            ;;
@@ -583,7 +621,7 @@ message "step 3: $0 deps"
 message "step 4: $0 firewall"
 message "step 5: $0 swap"
 message "step 6: $0 clone"
-message "option 1: steps to run a masternode:"
+message "option 1: steps to run a masternode (without wallet-functionality):"
 message "step 7: $0 compilemn"
 message "step 8: $0 configmn"
 message "step 9: $0 startmn"
@@ -591,8 +629,10 @@ message "option 2: steps run a wallet:"
 message "step 7: $0 compilewallet"
 message "step 8: $0 startwallet"
 message "option 3: crosscompile wallet for windows:"
-message "step 7: $0 crosscompiledepends"
-message "step 8: $0 crosscompilebuild"
+message "step 7: $0 crosscompiledeps"
+message "step 8: $0 crosscompiledepends"
+message "step 9: $0 crosscompilebuild"
+message "step 10: $0 startwallet"
 echo
 
 cd
