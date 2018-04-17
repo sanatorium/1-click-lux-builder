@@ -1,7 +1,7 @@
-# build scripts
+## build scripts
 ===============
 
-# install masternode without wallet-functionality (vps-part on linux):
+### install masternode without wallet-functionality (vps-part on linux):
     sudo apt install -y git
     git clone https://github.com/sanatorium/sanity-scripts.git
     cd sanity-scripts
@@ -17,7 +17,7 @@
     ./sanity.sh configmn
     ./sanity.sh startmn
 
-# install daemon with wallet-functionality (on linux):
+### install daemon with wallet-functionality (on linux):
     sudo apt install -y git
     git clone https://github.com/sanatorium/sanity-scripts.git
     cd sanity-scripts
@@ -32,7 +32,7 @@
     ./sanity.sh compilewallet
     ./sanity.sh startwallet
 
-# cross-compile (on linux) wallet for windows:
+### cross-compile (on linux) wallet for windows:
     sudo apt install -y git
     git clone https://github.com/sanatorium/sanity-scripts.git
     cd sanity-scripts
@@ -48,7 +48,7 @@
     ./sanity.sh crosscompiledepends
     ./sanity.sh crosscompilebuild
 
-# list all script functions
+### list all script functions
     sudo apt install -y git
     git clone https://github.com/sanatorium/sanity-scripts.git
     cd sanity-scripts
