@@ -1,6 +1,12 @@
 #!/bin/bash
+
 #Info: Installs Sanity daemon, Masternode based on privkey
 #Tested OS: 16.04
+
+#get the script:
+# wget https://raw.githubusercontent.com/sanatorium/sanity-scripts/master/install-sanitymn.sh
+# git clone https://github.com/sanatorium/sanity-scripts.git
+# ./sanity.sh
 
 NEWUSER=sanitycore
 COINGITHUB=https://github.com/sanatorium/sanity.git
@@ -16,29 +22,64 @@ COINCLI=sanity-cli
 MAX=14
 
 NONE='\033[00m'
-RED='\033[01;31m'
-GREEN='\033[01;32m'
-YELLOW='\033[01;33m'
-PURPLE='\033[01;35m'
-CYAN='\033[01;36m'
-WHITE='\033[01;37m'
 BOLD='\033[1m'
 UNDERLINE='\033[4m'
+ENDCOLOR='\e[m'
+
+# Regular Colors
+BLACK='\033[0;30m'        # Black
+RED='\033[0;31m'          # Red
+GREEN='\033[0;32m'        # Green
+YELLOW='\033[0;33m'       # Yellow
+BLUE='\033[0;34m'         # Blue
+PURPLE='\033[0;35m'       # Purple
+CYAN='\033[0;36m'         # Cyan
+WHITE='\033[0;37m'        # White
+
+# Bold
+BBlack='\033[1;30m'       # Black
+BRed='\033[1;31m'         # Red
+BGreen='\033[1;32m'       # Green
+BYellow='\033[1;33m'      # Yellow
+BBlue='\033[1;34m'        # Blue
+BPurple='\033[1;35m'      # Purple
+BCyan='\033[1;36m'        # Cyan
+BWhite='\033[1;37m'       # White
+
+# Underline
+UBlack='\033[4;30m'       # Black
+URed='\033[4;31m'         # Red
+UGreen='\033[4;32m'       # Green
+UYellow='\033[4;33m'      # Yellow
+UBlue='\033[4;34m'        # Blue
+UPurple='\033[4;35m'      # Purple
+UCyan='\033[4;36m'        # Cyan
+UWhite='\033[4;37m'       # White
+
+# Background
+On_Black='\033[40m'       # Black
+On_Red='\033[41m'         # Red
+On_Green='\033[42m'       # Green
+On_Yellow='\033[43m'      # Yellow
+On_Blue='\033[44m'        # Blue
+On_Purple='\033[45m'      # Purple
+On_Cyan='\033[46m'        # Cyan
+On_White='\033[47m'       # White
 
 message() {
-	echo -e "${NONE}*** ${GREEN} $1 ${NONE}"
+	echo -e "${NONE}${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
 }
 
 messagebig() {
-	echo -e "${YELLOW}"
+	echo -e "${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
 	echo -e "***"
-	echo -e "*** ${GREEN} $1 ${CYAN}"
+	echo -e "*** $1"
 	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
-	echo -e "${NONE}"
+	echo -e "${ENDCOLOR}"
 	sleep 2s
 }
 
@@ -48,49 +89,104 @@ error() {
 	echo -e "***"
 	echo -e "*** An error occured, you must fix it to continue!"
 	echo -e "***"
-	echo -e "*** ${RED} $1 ${RED}"
+	echo -e "*** $1"
 	echo -e "***"
 	echo -e "********************************************************************"
-	echo -e "${NONE}"
+	echo -e "${ENDCOLOR}"
 	exit 1
 }
 
 checkForUbuntuVersion() {
-   messagebig "Checking Ubuntu version..."
+   messagebig "checkForUbuntuVersion: Checking Ubuntu version..."
     if [[ `cat /etc/issue.net` == *16.04* ]]; then
-        echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
+        message "You are running `cat /etc/issue.net` . Setup will continue.";
     else
-        echo -e "${RED}* You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net` ${NONE}";
-        echo && echo "Installation cancelled" && echo;
-        exit;
+        message "You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net`";
+		echo -e "${BOLD}"
+		read -p "Continue anyway? (y/n)? " response
+		echo -e "${NONE}"
+
+		if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+			echo && echo "Trying to install on untested system configuration." && echo;
+		else
+	        echo && echo "Installation cancelled." && echo;
+	        exit;
+		fi
     fi
+}
+
+monitor() {
+	messagebig "monitor: Starting system monitor..."
+	top
+}
+
+glances() {
+	messagebig "glances: Starting system monitor..."
+	sudo apt install -y glances
+	glances
+}
+
+checkDisk() {
+	messagebig "checkDisk: Checking disk space..."
+	cd
+	message "du -h --max-depth=1"
+	du -h --max-depth=1
+
+	message "df -h --total"
+	df -h --total
+
+	message "df -Th"
+	df -Th
+
+	message "cat /proc/swaps"
+	cat /proc/swaps
+
+	message "swapon -s"
+	swapon -s
+
+	message "swapon --all"
+	swapon --all
+
+	message "free -h"
+	free -h
+
+	message "free -g"
+	free -gh
+
+	message "free -k"
+	free -kh
+
+	message "free -m"
+	free -mh
 }
 
 createUser() {
 	messagebig "[Step 1/${MAX}] createUser: Create new user account '${NEWUSER}'"
-	echo -e "${BOLD}"
-	read -p "Create a new user-account ${NEWUSER}? (y/n)? " response
-	echo -e "${NONE}"
 
+	echo -e "${BOLD}"
+	read -p "Create a new user-account called ${NEWUSER}? (y/n)? " response
+	echo -e "${NONE}"
 	if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 		message "Switching to root user. Enter your root password.";
-		su
+		##su needs unlocked root-account first: sudo passwd root
+		#su
 
-		message "Choose a password for your new user-account.";
-		adduser $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		message "Than choose a password for your new user-account.";
+		#adduser $NEWUSER
+		sudo adduser $NEWUSER
+		if [ $? -ne 0 ]; then error "createUser: adduser ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
-		usermod -aG sudo $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		sudo usermod -aG sudo $NEWUSER
+		if [ $? -ne 0 ]; then error "createUser: usermod -aG sudo ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 
 		message "Checking account directory /home/${NEWUSER}.";
-		ls /home/$NEWUSER
+		sudo ls /home/$NEWUSER
 
 		message "Switching to new account.";
 		su - $NEWUSER
-		if [ $? -ne 0 ]; then error; fi
+		if [ $? -ne 0 ]; then error "createUser: su - ${NEWUSER}"; fi
 		#if [ $? -ne 0 ]; then error; sudo deluser $NEWUSER; rm -rf /home/$NEWUSER; fi
 	else
 	    echo && echo "Creating new user skipped." && echo
@@ -102,7 +198,10 @@ createUser() {
 updateAndUpgrade() {
 	messagebig "[Step 2/${MAX}] updateAndUpgrade: Running update and upgrade."
 
+	message "updateAndUpgrade: sudo update.";
 	sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq -y
+
+	message "updateAndUpgrade: sudo upgrade.";
 	sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
 
 	messagebig "[Step 2/${MAX}] updateAndUpgrade: Done.";
@@ -114,36 +213,50 @@ installDependencies() {
 	sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
 
 	#build requirements
-	message "Installing build requirements.";
+	message "installDependencies: Installing build requirements.";
 	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+	if [ $? -ne 0 ]; then error "installDependencies: build requirements"; fi
 
 	#boost
-	message "Installing boost.";
+	message "installDependencies: Installing boost.";
 	sudo apt-get install -y libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
-	##not working -> sudo apt-get install libboost-all-dev
+	##above not working with --disable-wallet ->
+	#sudo apt-get install -y libboost-all-dev
+	if [ $? -ne 0 ]; then error "installDependencies: boost"; fi
 
 	#db4.8
-	message "Installing db4.8.";
+	message "installDependencies: Installing db4.8.";
 	sudo apt-get install -y software-properties-common
-	sudo add-apt-repository ppa:bitcoin/bitcoin
+	sudo add-apt-repository -y ppa:bitcoin/bitcoin
 	sudo apt-get update -y
+	#remove unneeded db-installes
+	sudo apt autoremove
 	sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
+	if [ $? -ne 0 ]; then error "installDependencies: db4.8"; fi
 
 	#zqm
-	message "Installing zqm.";
+	message "installDependencies: Installing zqm.";
 	sudo apt-get install -y libzmq3-dev
+	if [ $? -ne 0 ]; then error "installDependencies: zqm"; fi
 
 	#qt5
-	message "Installing qt5.";
+	message "installDependencies: Installing qt5.";
 	sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
+	if [ $? -ne 0 ]; then error "installDependencies: qt5"; fi
 
 	#git
-	message "Installing git.";
+	message "installDependencies: Installing git.";
 	sudo apt install -y git
+	if [ $? -ne 0 ]; then error "installDependencies: git"; fi
 
 	#crlf to lf converter
-	message "Installing sod2unix.";
+	message "installDependencies: Installing dos2unix.";
 	sudo apt-get install -y dos2unix
+	if [ $? -ne 0 ]; then error "installDependencies: dos2unix"; fi
+
+	message "installDependencies: Installing curl.";
+	sudo apt install -y curl
+	if [ $? -ne 0 ]; then error "installDependencies: dos2unix"; fi
 
 	#echo
 	#echo -e "[5/${MAX}] Installing dependencies. Please wait..."
@@ -182,10 +295,10 @@ installDependencies() {
 installFail2Ban() {
 	messagebig "[Step 4/${MAX}] installFail2Ban: Installing fail2ban."
 
-	message "Installing fail2ban.";
+	message "installFail2Ban: Installing fail2ban.";
     sudo apt-get -y install fail2ban
 
-	message "Enable fail2ban.";
+	message "installFail2Ban: Enable fail2ban.";
     sudo systemctl enable fail2ban
     sudo systemctl start fail2ban
 
@@ -195,17 +308,17 @@ installFail2Ban() {
 installFirewall() {
 	messagebig "[Step 5/${MAX}] installFirewall: Installing ufw firewall."
 
-	message "Installing ufw firewall.";
+	message "installFirewall: Installing ufw firewall.";
     sudo apt-get -y install ufw
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
-	message "Installing ufw firewall: enable ssh.";
+	message "installFirewall: Installing ufw firewall: enable ssh.";
     sudo ufw allow ssh
     sudo ufw limit ssh/tcp
-	message "Installing ufw firewall: enable coinports.";
+	message "installFirewall: Installing ufw firewall: enable coinports.";
     sudo ufw allow $COINPORT/tcp
     sudo ufw allow $COINRPCPORT/tcp
-	message "Installing ufw firewall: enable logging.";
+	message "installFirewall: Installing ufw firewall: enable logging.";
     sudo ufw logging on
     echo "y" | sudo ufw enable
 
@@ -230,11 +343,14 @@ createSwap() { #TODO: add error detection
 cloneGithub() {
 	messagebig "[Step 7/${MAX}] cloneGithub: Cloning Sanity source from sanity-master repository."
 
-	message "Cloning source from ${COINGITHUB} to ${COINDIR}."
+	message "cloneGithub: Cloning source from ${COINGITHUB} to ${COINDIR}."
 	cd ~/
-	git clone $COINGITHUB $COINDIR
-	if [ $? -ne 0 ]; then error; fi
-
+	if [ ! -d "~/$COINDIR" ]; then
+		git clone $COINGITHUB $COINDIR
+		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
+	else
+		message "cloneGithub: Directory exists already. Cloning skipped."
+	fi
 	messagebig "[Step 7/${MAX}] cloneGithub: Done."
 }
 
@@ -243,6 +359,11 @@ removeWindowsLinefeeds() {
 
 	#cd /home/$NEWUSER/$COINDIR
 	cd ~/$COINDIR
+
+	# strip out problematic Windows %PATH% imported var (Windows Subsystem for Linux (WSL))
+	PATH=$(echo "$PATH" | sed -e 's/:\/mnt.*//g')
+
+	# convert lineendings
 	find . -type f -not -path '*/\.*' -exec grep -Il '.' {} \; | xargs -d '\n' -L 1 sudo dos2unix -k
 
 	messagebig "[Step 8/${MAX}] removeWindowsLinefeeds: Done."
@@ -261,9 +382,9 @@ patchTimestamps() {
 compileSource() {
 	messagebig "[Step 9/${MAX}] compileSource: Building Sanity."
 
-	message "Preparing to build Sanity."
+	message "compileSource: Preparing to build Sanity."
 	cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: leveldb"; fi
 
 	#message "Building Sanity: sudo depends/sudo make"
 	#cd ~/$COINDIR/depends
@@ -271,50 +392,64 @@ compileSource() {
 	#sudo chmod 755 -v config.guess && sudo chmod +x -v config.sub
 	#make
 
-	message "Building Sanity for linux: sudo ./autogen.sh"
+	message "compileSource: ls"
 	cd ~/$COINDIR
 	ls -al
+
+	message "compileSource: ./autogen.sh"
 	#sudo chmod 755 -v *.sh
 	#sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
 
-	message "Building Sanity for linux: ./configure ${$1} --disable-tests"
+	message "compileSource: ./configure ${1} --disable-tests --disable-bench --disable-silent-rules --enable-debug"
 	#sudo chmod 755 -v ./configure
+	#./configure --without-gui --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
 
-	message "Building Sanity for linux: make clean"
+	message "compileSource: make clean"
 	make clean
 
 	#sudo chmod 755 share/genbuild.sh
 
-	message "Building Sanity for linux: make"
+	message "compileSource: make"
 	make
-	if [ $? -ne 0 ]; then error; fi
+	if [ $? -ne 0 ]; then error "compileSource: make"; fi
 
-  	message "Storing sanityd and sanity-cli to ~/${COINBIN}"
-	strip $COINDAEMON
-	strip $COINCLI
-	make install DESTDIR=~/$COINBIN
+	#message "compileSource: strip sanityd and sanity-cli"
+	#strip -v ~/$COINDIR/$COINDAEMON
+	#strip -v ~/$COINDIR/$COINCLI
 
-	message "Installing sanityd and sanity-cli to ~/${COINCORE}"
-	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
-	cp -uv ~/$COINBIN/usr/local/bin/sanityd ~/$COINCORE
-	cp -uv ~/$COINBIN/usr/local/bin/sanity-cli ~/$COINCORE
+	message "compileSource: Storing sanityd and sanity-cli to ~/${COINBIN}"
+	make install-strip DESTDIR=~/$COINBIN
+	if [ $? -ne 0 ]; then error "compileSource: make install"; fi
 
-  	#sudo ln -s sanityd /usr/bin
-	#sudo ln -s sanity-cli /usr/bin
-  	if [ $? -ne 0 ]; then error; fi
+	message "compileSource: make check"
+	make check
 
 	messagebig "[Step 9/${MAX}] compileSource: Done."
 }
 
-createConfig() {
+installBuildLinux() {
+	messagebig "[Step 9/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
+	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
+	error "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
+	cp -uv ~/$COINBIN/usr/local/bin/sanityd ~/$COINCORE
+	cp -uv ~/$COINBIN/usr/local/bin/sanity-cli ~/$COINCORE
+	if [ $? -ne 0 ]; then error "installBuildLinux: failed to copy to ~/${COINCORE}"; fi
+
+	#optional
+	cp -uv ~/$COINBIN/usr/local/bin/sanity-tx ~/$COINCORE
+	cp -uv ~/$COINBIN/usr/local/bin/sanity-qt ~/$COINCORE
+
+	messagebig "[Step 9/${MAX}] installBuildLinux: Done."
+}
+
+createConfigMN() {
 	messagebig "[Step 10/${MAX}] createConfig: Creating sanity.conf"
 	mnkey=""
 	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
-	if [ $? -ne 0 ]; then error; fi
 
 	mnip=$(curl -s https://api.ipify.org)
 	rpcuser=$(date +%s | sha256sum | base64 | head -c 10 ; echo)
@@ -326,41 +461,41 @@ createConfig() {
 	#echo -e "rpcuser=${rpcuser}\nrpcpassword=${rpcpass}\nrpcport=${COINRPCPORT}\nrpcallowip=127.0.0.1\nrpcthreads=8\nlisten=1\nserver=1\ndaemon=1\nstaking=0\ndiscover=1\nexternalip=${mnip}:${COINPORT}\nmasternode=1\nmasternodeprivkey=${mnkey}" > ~/$COINCORE/$COINCONFIG
 	echo -e "rpcuser=${rpcuser}\nrpcpassword=${rpcpass}" > ~/$COINCORE/$COINCONFIG
 
-	message "Starting daemon."
+	message "createConfig: Starting daemon."
   	~/$COINCORE/$COINDAEMON
 
-  	message "Wait 20 seconds for daemon to load..."
+  	message "createConfig: Waiting 20 seconds for daemon to load..."
   	sleep 20s
 
-	message "Creating masternode key."
+	message "createConfig: Creating masternode key."
 	mnkey=$(~/$COINCORE/$COINCLI masternode genkey)
 
-	message "Stopping daemon."
+	message "createConfig: Stopping daemon."
 	~/$COINCORE/$COINCLI stop
 
-	message "wait 10 seconds for deamon to stop..."
+	message "createConfig: Waiting 10 seconds for deamon to stop..."
   	sleep 10s
 
 	sudo rm ~/$COINCORE/$COINCONFIG
 
-	message "Updating ${COINCONFIG}."
+	message "createConfig: Updating config ${COINCONFIG}."
 	#printf "%s\n" "rpcuser=$rpcuser" "rpcpassword=$rpcpass" "rpcallowip=127.0.0.1" "port=$COINPORT" "listen=1" "server=1" "daemon=1" "maxconnections=256" "rpcport=$COINRPCPORT" > $CONFILE
 	#echo -e "rpcuser=${rpcuser}\nrpcpassword=${rpcpass}\nrpcport=${COINRPCPORT}\nrpcallowip=127.0.0.1\nrpcthreads=8\nlisten=1\nserver=1\ndaemon=1\nstaking=0\ndiscover=1\nexternalip=${mnip}:${COINPORT}\nmasternode=1\nmasternodeprivkey=${mnkey}" > ~/$COINCORE/$COINCONFIG
 	echo -e "rpcuser=${rpcuser}\nrpcpassword=${rpcpass}\nrpcport=${COINRPCPORT}\nrpcallowip=127.0.0.1\nrpcthreads=8\nlisten=1\nserver=1\ndaemon=1\ngen=0\ndiscover=1\nexternalip=${mnip}:${COINPORT}\nmasternode=1\nmasternodeprivkey=${mnkey}" > ~/$COINCORE/$COINCONFIG
 
-	message "Show dir: ls ~/${COINCORE}"
+	message "createConfig: Show directory ls ~/${COINCORE}"
 	ls ~/$COINCORE
 
-	message "Show config: cat ~/${$COINCORE}/${$COINCONFIG}"
+	message "createConfig: Show Sanity config: cat ~/${$COINCORE}/${$COINCONFIG}"
 	cat ~/$COINCORE/$COINCONFIG
 
 	messagebig "[Step 10/${MAX}] createConfig: Done."
 }
 
-startWallet() {
-	messagebig "[Step 11/${MAX}] startWallet: Starting wallet daemon."
+startDaemon() {
+	messagebig "[Step 11/${MAX}] startDaemon: Starting wallet daemon."
 
-	message "Reseting."
+	message "startDaemon: Remove *.dat."
 	cd ~/$COINCORE
 	sudo rm governance.dat > /dev/null 2>&1
 	sudo rm netfulfilled.dat > /dev/null 2>&1
@@ -372,7 +507,7 @@ startWallet() {
 	sudo rm mnpayments.dat > /dev/null 2>&1
 	sudo rm banlist.dat > /dev/null 2>&1
 
-	message "Starting daemon."
+	message "startDaemon: Starting daemon: ~/${COINCORE}/${COINDAEMON} -daemon"
 	~/$COINCORE/$COINDAEMON -daemon
 
 	messagebig "[Step 11/${MAX}] startWallet: Done. Damon is running."
@@ -382,6 +517,7 @@ syncWallet() {
     echo
 	messagebig "[Step 12/${MAX}] syncWallet: Please wait for wallet to sync..."
     sleep 2
+	message "startDaemon: ~/${COINCORE}/${COINCLI} getinfo"
 	~/$COINCORE/$COINCLI getinfo
 	sleep 2
 }
@@ -405,7 +541,50 @@ displayPromptToSendFunds() {
     message "Restart your local wallet. Go to the masternode-tab, select your masternode and select 'start'."
 }
 
-startInstall() {
+crossCompileInstallDependencies() {
+	messagebig "crossCompileInstallDependencies: install mingw"
+	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
+	sudo apt-get install -y g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+
+	#sudo apt install software-properties-common
+	#sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu zesty universe"
+	#sudo apt update
+	#sudo apt upgrade
+
+	## You must select any of the toolchains with 'Thread model posix'
+	#sudo update-alternatives --config x86_64-w64-mingw32-g++ # Set the default mingw32 g++ compiler option to posix.
+	messagebig "crossCompileInstallDependencies: Done."
+}
+
+crossCompileDepends() {
+	messagebig "crossCompileDepends: Building for windows: depends/make HOST=x86_64-w64-mingw32"
+	cd ~/$COINDIR/depends
+	make HOST=x86_64-w64-mingw32
+	messagebig "crossCompileDepends: Done."
+}
+
+crossCompilePosix() {
+	## wichtig dash error bei suda make wenn nicht auf POSIX gestellt
+	## You must select any of the toolchains with 'Thread model posix'
+	messagebig "crossCompilePosix: Building for windows: select 'posix'"
+
+	message "+++ USER INTERACTION REQUIRED +++"
+	message "+++ USER INTERACTION REQUIRED +++"
+	message "+++ USER INTERACTION REQUIRED +++"
+	message "You must select any of the toolchains with 'Thread model posix"
+	message "Set the default mingw32 g++ compiler option to ***posix***."
+	sudo update-alternatives --config x86_64-w64-mingw32-g++
+	messagebig "crossCompilePosix: Done."
+}
+
+crossCompileBuild() {
+	messagebig "crossCompileBuild: Building for windows: compile source"
+	cd ~/$COINDIR
+	compileSource --prefix=`pwd`/depends/x86_64-w64-mingw32
+	messagebig "crossCompileBuild: Done."
+}
+
+startInstallMNAll() {
 	checkForUbuntuVersion
 	#createUser
 	updateAndUpgrade
@@ -417,15 +596,121 @@ startInstall() {
 	removeWindowsLinefeeds
 	#patchTimestamps
 	compileSource $1
-	createConfig
-	startWallet
+	installBuildLinux
+	createConfigMN
+	startDaemon
 	syncWallet
 	displayPromptToSendFunds
 }
 
-clear
-cd
+startCrosscompileAll() {
+	checkForUbuntuVersion
+	#createUser
+	updateAndUpgrade
+	installDependencies
+	createSwap
+	cloneGithub
+	removeWindowsLinefeeds
+	#patchTimestamps
 
+	crossCompileInstallDependencies
+	crossCompileDepends
+	crossCompilePosix
+	crossCompileBuild
+}
+
+installStep() {
+	case "$1" in
+			checkversion)
+				checkForUbuntuVersion
+				;;
+			monitor)
+				monitor
+				;;
+			glances)
+				glances
+				;;
+			checkdisk)
+				checkDisk
+				;;
+
+			user)
+				createUser
+				;;
+	        deps)
+				updateAndUpgrade
+				installDependencies
+	            ;;
+	        firewall)
+	            installFail2Ban
+				installFirewall
+	            ;;
+	        swap)
+	            createSwap
+	            ;;
+	        clone)
+	            cloneGithub
+				removeWindowsLinefeeds
+	            ;;
+
+			compilemn)
+	            compileSource --without-gui
+				installBuildLinux
+	            ;;
+			configmn)
+				createConfigMN
+	            ;;
+			startmn)
+	            startDeamon
+				syncWallet
+				displayPromptToSendFunds
+	            ;;
+
+			compilewallet)
+	            compileSource
+				installBuildLinux
+	            ;;
+			startwallet)
+	            startDaemon
+				syncWallet
+	            ;;
+
+			crosscompiledeps)
+				crossCompileInstallDependencies
+				;;
+			crosscompiledepends)
+	            crossCompileDepends
+	            ;;
+			crosscompileposix)
+	            crossCompilePosix
+	            ;;
+			crosscompilebuild)
+	            crossCompileBuild
+	            ;;
+
+			crosscompileall)
+				startCrosscompileAll
+	            ;;
+
+			mnall)
+				echo -e "${BOLD}"
+				read -p "This script will setup your Sanity Masternode in current user account. Do you wish to continue? (y/n)? " response
+				echo -e "${NONE}"
+
+				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+					#default to --without-gui for masternode
+					startInstallMNAll --without-gui
+				else
+				    echo && echo "Installation cancelled" && echo
+				fi
+	            ;;
+	        *)
+	            echo $"Usage: $0 {deps|firewall|swap|clone|compile|config|start}"
+	            exit 1
+	esac
+}
+
+clear
 echo
 echo -e "--------------------------------------------------------------------"
 echo -e "|                                                                  |"
@@ -434,14 +719,31 @@ echo -e "|                                                                  |"
 echo -e "|               (c) 2018 The Sanity Core Developers                |"
 echo -e "|                                                                  |"
 echo -e "--------------------------------------------------------------------"
+echo
+message "helper: $0 checkversion"
+message "helper: $0 checkdisk"
+message "helper: $0 monitor"
+message "helper: $0 glances"
+message "single access install steps (recommended):"
+message "step 1: $0 user"
+message "step 2: $0 deps"
+message "step 3: $0 firewall"
+message "step 4: $0 swap"
+message "step 5: $0 clone"
+message "option 1: steps to run a masternode (without wallet-functionality):"
+message "step 6: $0 compilemn"
+message "step 7: $0 configmn"
+message "step 8: $0 startmn"
+message "option 2: steps run a wallet:"
+message "step 6: $0 compilewallet"
+message "step 7: $0 startwallet"
+message "option 3: crosscompile wallet for windows:"
+message "step 6: $0 crosscompiledeps"
+message "step 7: $0 crosscompiledepends"
+message "step 8: $0 crosscompileposix"
+message "step 9: $0 crosscompilebuild"
+echo
 
-echo -e "${BOLD}"
-read -p "This script will create and setup your Sanity Masternode. Do you wish to continue? (y/n)? " response
-echo -e "${NONE}"
-
-if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-	#default to --without-gui for masternode
-	startInstall --without-gui
-else
-    echo && echo "Installation cancelled" && echo
-fi
+cd
+installStep $1
+exit 1
