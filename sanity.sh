@@ -376,13 +376,13 @@ compileSource() {
 	#sudo chmod 755 -v *.sh
 	#sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
-	if [ $? -ne 0 ]; then error "compileSource: ./autogen.sh"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to ./autogen.sh"; fi
 
 	message "compileSource: ./configure ${1} --disable-tests --disable-bench --disable-silent-rules --enable-debug"
 	#sudo chmod 755 -v ./configure
 	#./configure --without-gui --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
-	if [ $? -ne 0 ]; then error "compileSource: ./configure"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to ./configure"; fi
 
 	message "compileSource: make clean"
 	make clean
@@ -391,7 +391,7 @@ compileSource() {
 
 	message "compileSource: make"
 	make
-	if [ $? -ne 0 ]; then error "compileSource: make"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to make"; fi
 
 	#message "compileSource: strip sanityd and sanity-cli"
 	#strip -v ~/$COINDIR/$COINDAEMON
@@ -399,7 +399,7 @@ compileSource() {
 
 	message "compileSource: Storing sanityd and sanity-cli to ~/${COINBIN}"
 	make install-strip DESTDIR=~/$COINBIN
-	if [ $? -ne 0 ]; then error "compileSource: make install"; fi
+	if [ $? -ne 0 ]; then error "compileSource: failed to make install"; fi
 
 	message "compileSource: make check"
 	make check
@@ -411,6 +411,7 @@ installBuildLinux() {
 	messagebig "[Step 10/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
 	cd ~/
 	if [ ! -d ${COINCORE} ]; then mkdir ~/$COINCORE; fi
+
 	message "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
 	cp -uv ~/$COINBIN/usr/local/bin/$COINDAEMON ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/$COINCLI ~/$COINCORE
@@ -522,7 +523,9 @@ displayPromptToSendFunds() {
 crossCompileInstallDependencies() {
 	messagebig "crossCompileInstallDependencies: install mingw"
 	sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git
+	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install dependencies"; fi
 	sudo apt-get install -y g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev
+	if [ $? -ne 0 ]; then error "crossCompileInstallDependencies: failed to install minigw"; fi
 
 	#sudo apt install software-properties-common
 	#sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu zesty universe"
@@ -538,6 +541,8 @@ crossCompileDepends() {
 	messagebig "crossCompileDepends: Building for windows: depends/make HOST=x86_64-w64-mingw32"
 	cd ~/$COINDIR/depends
 	make HOST=x86_64-w64-mingw32
+	if [ $? -ne 0 ]; then error "crossCompileDepends: failed to make HOST=x86_64-w64-mingw32"; fi
+	#32bit: make HOST=i686_64-w64-mingw32
 	messagebig "crossCompileDepends: Done."
 }
 
@@ -546,12 +551,14 @@ crossCompilePosix() {
 	## You must select any of the toolchains with 'Thread model posix'
 	messagebig "crossCompilePosix: Building for windows: select 'posix'"
 
-	message "+++ USER INTERACTION REQUIRED +++"
-	message "+++ USER INTERACTION REQUIRED +++"
-	message "+++ USER INTERACTION REQUIRED +++"
-	message "You must select any of the toolchains with 'Thread model posix"
-	message "Set the default mingw32 g++ compiler option to ***posix***."
+	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
+	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
+	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
+	message "crossCompilePosix: You must select any of the toolchains with 'Thread model posix"
+	message "crossCompilePosix: Set the default mingw32 g++ compiler option to ***posix***."
 	sudo update-alternatives --config x86_64-w64-mingw32-g++
+	if [ $? -ne 0 ]; then error "crossCompilePosix: failed to set posix"; fi
+	#32bit: sudo update-alternatives --config i686-w64-mingw32-g++
 	messagebig "crossCompilePosix: Done."
 }
 
@@ -559,6 +566,8 @@ crossCompileBuild() {
 	messagebig "crossCompileBuild: Building for windows: compile source"
 	cd ~/$COINDIR
 	compileSource --prefix=`pwd`/depends/x86_64-w64-mingw32
+	if [ $? -ne 0 ]; then error "crossCompileBuild: failed to compile source"; fi
+	#32bit: compileSource --prefix=`pwd`/depends/i686_64-w64-mingw32
 	messagebig "crossCompileBuild: Done."
 }
 
