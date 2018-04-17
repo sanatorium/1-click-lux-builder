@@ -123,12 +123,6 @@ monitor() {
 	top
 }
 
-glances() {
-	messagebig "glances: Starting system monitor..."
-	sudo apt install -y glances
-	glances
-}
-
 checkDisk() {
 	messagebig "checkDisk: Checking disk space..."
 	cd
@@ -138,29 +132,8 @@ checkDisk() {
 	message "df -h --total"
 	df -h --total
 
-	message "df -Th"
-	df -Th
-
-	message "cat /proc/swaps"
-	cat /proc/swaps
-
-	message "swapon -s"
-	swapon -s
-
-	message "swapon --all"
-	swapon --all
-
 	message "free -h"
 	free -h
-
-	message "free -g"
-	free -gh
-
-	message "free -k"
-	free -kh
-
-	message "free -m"
-	free -mh
 }
 
 createUser() {
@@ -348,7 +321,7 @@ cloneGithub() {
 
 	message "cloneGithub: Cloning source from ${COINGITHUB} to ${COINDIR}."
 	cd ~/
-	if [ ! -d "~/$COINDIR" ]; then
+	if [ ! -d "~/${COINDIR}" ]; then
 		git clone $COINGITHUB $COINDIR
 		if [ $? -ne 0 ]; then error "cloneGithub: git clone ${COINGITHUB} ${COINDIR}"; fi
 	else
@@ -436,7 +409,7 @@ compileSource() {
 
 installBuildLinux() {
 	messagebig "[Step 10/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
-	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
+	if [ ! -d "~/${COINCORE}" ]; then mkdir ~/$COINCORE; fi
 	message "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
 	cp -uv ~/$COINBIN/usr/local/bin/$COINDAEMON ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/$COINCLI ~/$COINCORE
@@ -452,7 +425,7 @@ installBuildLinux() {
 createConfigMN() {
 	messagebig "[Step 11/${MAX}] createConfig: Creating sanity.conf"
 	mnkey=""
-	if [ ! -d "~/$COINCORE" ]; then mkdir ~/$COINCORE; fi
+	if [ ! -d "~/${COINCORE}" ]; then mkdir ~/$COINCORE; fi
 
 	mnip=$(curl -s https://api.ipify.org)
 	rpcuser=$(date +%s | sha256sum | base64 | head -c 10 ; echo)
@@ -648,9 +621,6 @@ installStep() {
 			monitor)
 				monitor
 				;;
-			glances)
-				glances
-				;;
 			checkdisk)
 				checkDisk
 				;;
@@ -709,10 +679,6 @@ installStep() {
 	            crossCompileBuild
 	            ;;
 
-			crosscompileall)
-				startCrosscompileAll
-	            ;;
-
 			allmn)
 				echo -e "${BOLD}"
 				read -p "This script will setup your Sanity Masternode in current user account. Do you wish to continue? (y/n)? " response
@@ -732,25 +698,24 @@ installStep() {
 
 				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 					#default to --without-gui for masternode
-					startInstallMNAll
+					startInstallWalletAll
 				else
 				    echo && echo "Installation cancelled" && echo
 				fi
 	            ;;
 			allcrosscompile)
 				echo -e "${BOLD}"
-				read -p "This script will setup your Sanity Masternode in current user account. Do you wish to continue? (y/n)? " response
+				read -p "This script will crosscompile Sanity for windows. Do you wish to continue? (y/n)? " response
 				echo -e "${NONE}"
 
 				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 					#default to --without-gui for masternode
-					startInstallMNAll --without-gui
+					startCrosscompileAll
 				else
 				    echo && echo "Installation cancelled" && echo
 				fi
 	            ;;
 	        *)
-	            echo $"Usage: $0 {deps|firewall|swap|clone|compile|config|start}"
 	            exit 1
 	esac
 }
@@ -768,25 +733,29 @@ echo
 message "helper: $0 checkversion"
 message "helper: $0 checkdisk"
 message "helper: $0 monitor"
-message "helper: $0 glances"
+message ""
 message "single access install steps (recommended):"
 message "step 1: $0 user"
 message "step 2: $0 deps"
 message "step 3: $0 firewall"
 message "step 4: $0 swap"
 message "step 5: $0 clone"
+message ""
 message "option 1: steps to run a masternode (without wallet-functionality):"
 message "step 6: $0 compilemn"
 message "step 7: $0 configmn"
 message "step 8: $0 startmn"
+message ""
 message "option 2: steps run a wallet:"
 message "step 6: $0 compilewallet"
 message "step 7: $0 startwallet"
+message ""
 message "option 3: crosscompile wallet for windows:"
 message "step 6: $0 crosscompiledeps"
 message "step 7: $0 crosscompiledepends"
 message "step 8: $0 crosscompileposix"
 message "step 9: $0 crosscompilebuild"
+message ""
 message "all in one"
 message "$0 allmn"
 message "$0 allwallet"
