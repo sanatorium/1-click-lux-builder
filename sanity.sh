@@ -409,7 +409,8 @@ compileSource() {
 
 installBuildLinux() {
 	messagebig "[Step 10/${MAX}] installBuildLinux: Installing sanityd and sanity-cli to ~/${COINCORE}"
-	if [ ! -d "~/${COINCORE}" ]; then mkdir ~/$COINCORE; fi
+	cd ~/
+	if [ ! -d ${COINCORE} ]; then mkdir ~/$COINCORE; fi
 	message "installBuildLinux: copy sanityd and sanity-cli to ~/${COINCORE}";
 	cp -uv ~/$COINBIN/usr/local/bin/$COINDAEMON ~/$COINCORE
 	cp -uv ~/$COINBIN/usr/local/bin/$COINCLI ~/$COINCORE
@@ -425,7 +426,8 @@ installBuildLinux() {
 createConfigMN() {
 	messagebig "[Step 11/${MAX}] createConfig: Creating sanity.conf"
 	mnkey=""
-	if [ ! -d "~/${COINCORE}" ]; then mkdir ~/$COINCORE; fi
+	cd ~/
+	if [ ! -d ${COINCORE} ]; then mkdir ~/$COINCORE; fi
 
 	mnip=$(curl -s https://api.ipify.org)
 	rpcuser=$(date +%s | sha256sum | base64 | head -c 10 ; echo)
