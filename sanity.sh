@@ -1,11 +1,14 @@
 #!/bin/bash
 
-#Info: Installs Sanity daemon, Masternode based on privkey
+#Info: Installs Sanity daemon, masternode based on privkey, crosscompile for windows
 #Tested OS: 16.04
 
 #get the script:
-# wget https://raw.githubusercontent.com/sanatorium/sanity-scripts/master/install-sanitymn.sh
+# wget https://raw.githubusercontent.com/sanatorium/sanity-scripts/master/sanity.sh
+# ./sanity.sh
+# or
 # git clone https://github.com/sanatorium/sanity-scripts.git
+# cd sanity-scripts
 # ./sanity.sh
 
 NEWUSER=sanitycore
@@ -603,6 +606,24 @@ startInstallMNAll() {
 	displayPromptToSendFunds
 }
 
+startInstallWalletAll() {
+	checkForUbuntuVersion
+	#createUser
+	updateAndUpgrade
+	installDependencies
+	installFail2Ban
+	installFirewall
+	createSwap
+	cloneGithub
+	removeWindowsLinefeeds
+	#patchTimestamps
+	compileSource
+	installBuildLinux
+	startDaemon
+	syncWallet
+	displayPromptToSendFunds
+}
+
 startCrosscompileAll() {
 	checkForUbuntuVersion
 	#createUser
@@ -692,7 +713,31 @@ installStep() {
 				startCrosscompileAll
 	            ;;
 
-			mnall)
+			allmn)
+				echo -e "${BOLD}"
+				read -p "This script will setup your Sanity Masternode in current user account. Do you wish to continue? (y/n)? " response
+				echo -e "${NONE}"
+
+				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+					#default to --without-gui for masternode
+					startInstallMNAll --without-gui
+				else
+				    echo && echo "Installation cancelled" && echo
+				fi
+	            ;;
+			allwallet)
+				echo -e "${BOLD}"
+				read -p "This script will setup your Sanity Wallet in current user account. Do you wish to continue? (y/n)? " response
+				echo -e "${NONE}"
+
+				if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+					#default to --without-gui for masternode
+					startInstallMNAll
+				else
+				    echo && echo "Installation cancelled" && echo
+				fi
+	            ;;
+			allcrosscompile)
 				echo -e "${BOLD}"
 				read -p "This script will setup your Sanity Masternode in current user account. Do you wish to continue? (y/n)? " response
 				echo -e "${NONE}"
@@ -742,6 +787,10 @@ message "step 6: $0 crosscompiledeps"
 message "step 7: $0 crosscompiledepends"
 message "step 8: $0 crosscompileposix"
 message "step 9: $0 crosscompilebuild"
+message "all in one"
+message "$0 allmn"
+message "$0 allwallet"
+message "$0 allcrosscompile"
 echo
 
 cd
