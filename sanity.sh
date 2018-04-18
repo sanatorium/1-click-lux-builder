@@ -360,25 +360,28 @@ patchTimestamps() {
 compileSource() {
 	messagebig "[Step 9/${MAX}] compileSource: Building Sanity."
 
-	message "compileSource: Preparing to build Sanity."
-	cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
-	if [ $? -ne 0 ]; then error "compileSource: leveldb" "${?}"; fi
+	#message "compileSource: Preparing to build Sanity."
+	#cd ~/$COINDIR/src/leveldb && make clean && make libleveldb.a libmemenv.a
+	#if [ $? -ne 0 ]; then error "compileSource: leveldb" "${?}"; fi
 
 	#message "Building Sanity: sudo depends/sudo make"
-	#cd ~/$COINDIR/depends
-	#on "sudo make" error::: make: execvp: ./config.guess: Permission denied
-	#sudo chmod 755 -v config.guess && sudo chmod +x -v config.sub
-	#make
+	##cd ~/$COINDIR/depends
+	##on "sudo make" error::: make: execvp: ./config.guess: Permission denied
+	##sudo chmod 755 -v config.guess && sudo chmod +x -v config.sub
+	##make
 
-	message "compileSource: ls"
+	message "compileSource: ls ~/${COINDIR}"
 	cd ~/$COINDIR
 	ls -al
 
 	message "compileSource: ./autogen.sh"
-	#sudo chmod 755 -v *.sh
-	#sudo chmod 755 -v ./src/Makefile.am
+	##sudo chmod 755 -v *.sh
+	##sudo chmod 755 -v ./src/Makefile.am
 	./autogen.sh
 	if [ $? -ne 0 ]; then error "compileSource: failed to ./autogen.sh" "${?}"; fi
+
+	message "compileSource: make clean"
+	make clean
 
 	message "compileSource: ./configure ${1} --disable-tests --disable-bench --disable-silent-rules --enable-debug"
 	#sudo chmod 755 -v ./configure
@@ -386,10 +389,7 @@ compileSource() {
 	./configure $1 --disable-tests --disable-bench --disable-silent-rules --enable-debug
 	if [ $? -ne 0 ]; then error "compileSource: failed to ./configure" "${?}"; fi
 
-	message "compileSource: make clean"
-	make clean
-
-	#sudo chmod 755 share/genbuild.sh
+	##sudo chmod 755 share/genbuild.sh
 
 	message "compileSource: make"
 	make
@@ -406,7 +406,7 @@ compileSource() {
 	message "compileSource: make check"
 	make check
 
-	messagebig "[Step 9/${MAX}] compileSource: Done."
+	messagebig "[Step 9/${MAX}] compileSource: Done. Binaries in: ~/${COINBIN}"
 }
 
 installBuildLinux() {
@@ -556,6 +556,7 @@ crossCompilePosix() {
 	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
 	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
 	message "crossCompilePosix: +++ USER INTERACTION REQUIRED +++"
+	message "crossCompilePosix: If you are using WSL (Windows Subsystem for Linux) or Ubuntu 16.04 or higher you need to set your compiler to posix."
 	message "crossCompilePosix: You must select any of the toolchains with 'Thread model posix"
 	message "crossCompilePosix: Set the default mingw32 g++ compiler option to ***posix***."
 	sudo update-alternatives --config x86_64-w64-mingw32-g++
@@ -567,10 +568,30 @@ crossCompilePosix() {
 crossCompileBuild() {
 	messagebig "crossCompileBuild: Building for windows: compile source"
 	cd ~/$COINDIR
-	compileSource --prefix=`pwd`/depends/x86_64-w64-mingw32
+
+	message "compileSource: ./autogen.sh"
+	./autogen.sh
+	if [ $? -ne 0 ]; then error "compileSource: failed to ./autogen.sh" "${?}"; fi
+
+	message "compileSource: make clean"
+	make clean
+
+	messagebig "crossCompileBuild: ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32"
+	./configure --prefix=`pwd`/depends/x86_64-w64-mingw32
+	#32bit: ./configure --prefix=`pwd`/depends/i686_64-w64-mingw32
+
+	messagebig "crossCompileBuild: make"
+	make
 	if [ $? -ne 0 ]; then error "crossCompileBuild: failed to compile source" "${?}"; fi
-	#32bit: compileSource --prefix=`pwd`/depends/i686_64-w64-mingw32
-	messagebig "crossCompileBuild: Done."
+
+	message "compileSource: Storing sanityd and sanity-cli to ~/${COINBIN}"
+	make install-strip DESTDIR=~/$COINBIN
+	if [ $? -ne 0 ]; then error "compileSource: failed to make install" "${?}"; fi
+
+	message "compileSource: make check"
+	make check
+
+	messagebig "crossCompileBuild: Done. Binaries in: ~/${COINBIN}"
 }
 
 startInstallMNAll() {
