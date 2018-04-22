@@ -443,7 +443,7 @@ createConfigMN() {
 	echo -e "rpcuser=${rpcuser}\nrpcpassword=${rpcpass}" > ~/$COINCORE/$COINCONFIG
 
 	message "createConfig: Starting daemon."
-  	~/$COINCORE/$COINDAEMON
+  	~/$COINCORE/$COINDAEMON -daemon
 
   	message "createConfig: Waiting 20 seconds for daemon to load..."
   	sleep 20s
