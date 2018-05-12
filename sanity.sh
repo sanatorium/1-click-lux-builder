@@ -70,11 +70,12 @@ On_Cyan='\033[46m'        # Cyan
 On_White='\033[47m'       # White
 
 message() {
-	echo -e "${NONE}${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
+	#echo -e "${NONE}${On_Yellow}*** ${BLUE} $1 ${ENDCOLOR}"
+	echo -e "*** $1"
 }
 
 messagebig() {
-	echo -e "${BLUE}"
+	#echo -e "${BLUE}"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
 	echo -e "***"
@@ -82,7 +83,7 @@ messagebig() {
 	echo -e "***"
 	echo -e "********************************************************************"
 	echo -e "********************************************************************"
-	echo -e "${ENDCOLOR}"
+	#echo -e "${ENDCOLOR}"
 	sleep 2s
 }
 
@@ -236,37 +237,6 @@ installDependencies() {
 	sudo apt install -y curl
 	if [ $? -ne 0 ]; then error "installDependencies: curl" "${?}"; fi
 
-	#echo
-	#echo -e "[5/${MAX}] Installing dependencies. Please wait..."
-	#sudo apt-get install -y build-essential libtool autotools-dev pkg-config libssl-dev libboost-all-dev autoconf automake -qq -y > /dev/null 2>&1
-	#sudo apt-get install libzmq3-dev libminiupnpc-dev libssl-dev libevent-dev -qq -y > /dev/null 2>&1
-	#sudo apt-get install libgmp-dev -qq -y > /dev/null 2>&1
-	#sudo apt-get install openssl -qq -y > /dev/null 2>&1
-	#sudo apt-get install software-properties-common -qq -y > /dev/null 2>&1
-	#sudo add-apt-repository ppa:bitcoin/bitcoin -y > /dev/null 2>&1
-	#sudo apt-get update -qq -y > /dev/null 2>&1
-	#sudo apt-get install libdb4.8-dev libdb4.8++-dev -qq -y > /dev/null 2>&1
-	#echo -e "${NONE}${GREEN}* Done${NONE}";
-
-	#install deps
-	##sudo apt-get install dos2unix curl git ufw
-	##sudo apt-get install -y build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
-	##sudo apt-get install -y libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
-	##sudo apt-get install -y software-properties-common
-	##sudo add-apt-repository -y ppa:bitcoin/bitcoin
-	##sudo apt-get update
-
-	##sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
-	##sudo apt-get install -y libzmq3-dev
-	##sudo apt-get install -y libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler
-	##sudo apt-get install -y libqrencode-dev
-	##sudo apt-get update
-	##sudo apt-get -y upgrade
-
-	#sudo apt-get install -y qt4-qmake libqt4-dev libminiupnpc-dev libdb++-dev libdb-dev libcrypto++-dev libqrencode-dev libboost-all-dev build-essential libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev libssl-dev libdb++-dev libssl-dev ufw git software-properties-common
-	#sudo add-apt-repository -y ppa:bitcoin/bitcoin
-	#sudo apt-get update
-	#sudo apt-get install -y libdb4.8-dev libdb4.8++-dev
 	messagebig "[Step 3/${MAX}] installDependencies: Done."
 }
 
