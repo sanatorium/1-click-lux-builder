@@ -14,7 +14,7 @@
 NEWUSER=sanitycore
 COINGITHUB=https://github.com/sanatorium/sanity.git
 COINDIR=sanity-src
-COINBIN=sanity-bin
+COINBIN=sanitybin
 COINCORE=.sanitycore
 COINCONFIG=sanity.conf
 COINPORT=9999
@@ -437,7 +437,7 @@ createConfigMN() {
 	message "createConfig: Show directory ls ~/${COINCORE}"
 	ls ~/$COINCORE
 
-	message "createConfig: Show Sanity config: cat ~/${$COINCORE}/${$COINCONFIG}"
+	message "createConfig: Show Sanity config: cat ~/${COINCORE}/${COINCONFIG}"
 	cat ~/$COINCORE/$COINCONFIG
 
 	messagebig "[Step 11/${MAX}] createConfig: Done."
